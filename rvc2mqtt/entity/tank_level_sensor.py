@@ -46,11 +46,10 @@ class TankLevelSensor_TANK_STATUS(EntityPluginBaseClass):
         self.instance = data['instance']
         self.instance_name = self._get_instance_name(self.instance)
 
-        self.device = {"manufacturer": "RV-C",
-                       "via_device": self.mqtt_support.get_bridge_ha_name(),
-                       "identifiers": self.unique_device_id,
-                       "name": self.name,
-                       "model": "RV-C Tank from TANK_STATUS"
+        self.device = {"manufacturer": "Firefly Integrations",
+                       "identifiers": "Temp1",
+                       "name": "Firefly",
+                       "model": "G12"
                        }
 
         self.waiting_for_first_msg = True
@@ -69,22 +68,16 @@ class TankLevelSensor_TANK_STATUS(EntityPluginBaseClass):
         if self._is_entry_match(self.rvc_match_status, new_message):
             self.Logger.debug(f"Msg Match Status: {str(new_message)}")
 
-            if(self.waiting_for_first_msg):
-                # because we don't have all info until first message we need to wait
-                # figure out level resolution
-                self.resolution = new_message['resolution']
-                # send auto discovery info
-                self._send_ha_mqtt_discovery_info()
-                # mark first msg sent
-                self.waiting_for_first_msg = False
-
-            
-            new_level = (new_message["relative_level"] * 100) / self.resolution
-            new_level = round(new_level)  # round it..partial precentage isn't important here
-            if new_level != self.level:
-                self.level = new_level
-                self.mqtt_support.client.publish(
-                    self.status_topic, self.level, retain=True)
+            try:
+                new_level = (new_message["relative_level"] * 100) / new_message['resolution'] 
+                new_level = round(new_level)  # round it..partial precentage isn't important here
+                if new_level != self.level:
+                    self.level = new_level
+                    self.Logger.debug(f"Publishing message: {self.status_topic + str(self.level)}")
+                    self.mqtt_support.client.publish(
+                        self.status_topic, self.level, retain=True)
+            except Exception as e:
+                self.Logger.error(f"Error processing tank level: {str(e)}")
             return True
         return False
 
@@ -96,21 +89,19 @@ class TankLevelSensor_TANK_STATUS(EntityPluginBaseClass):
 
         This can be a good place to request data    
         """
-        # request dgn report - this should trigger the tanks to report
-        # dgn = 1FFB7 which is actually  BD FF 01 <instance> 00 00 00 00
-        self.Logger.debug("Sending Request for DGN")
-        data = struct.pack("<BBBBBBBB", int("0xB7", 0), int(
-            "0xFF", 0), 1, self.instance, 0, 0, 0, 0)
-        self.send_queue.put({"dgn": "EAFF", "data": data})
-
-    
-    def _send_ha_mqtt_discovery_info(self):
+        # # request dgn report - this should trigger the tanks to report
+        # # dgn = 1FFB7 which is actually  BD FF 01 <instance> 00 00 00 00
+        # self.Logger.debug("Sending Request for DGN")
+        # data = struct.pack("<BBBBBBBB", int("0xB7", 0), int(
+        #     "0xFF", 0), 1, self.instance, 0, 0, 0, 0)
+        # self.send_queue.put({"dgn": "EAFF", "data": data})
 
         # produce the HA MQTT discovery config json
         config = {"name": self.name,
                   "state_topic": self.status_topic,
                   "qos": 1, "retain": False,
-                  "unit_of_meas": 'percentage',
+                  "unit_of_meas": '%',
+                  "suggested_display_precision": 0,
                   "state_class": "measurement",
                   "value_template": '{{value}}',
                   "unique_id": self.unique_device_id,
@@ -119,6 +110,7 @@ class TankLevelSensor_TANK_STATUS(EntityPluginBaseClass):
 
         config_json = json.dumps(config)
 
+        #This tells Home Assistant to treat this as a sensor
         ha_config_topic = self.mqtt_support.make_ha_auto_discovery_config_topic(
             self.unique_device_id, "sensor")
 

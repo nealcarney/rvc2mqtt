@@ -75,7 +75,7 @@ class RVC_Decoder(object):
             dgn = result["dgn_h"]
 
             if dgn not in self.spec:
-                self.Logger.warning(f"Failed to find DGN {result['dgn']} in loaded specification")
+                self.Logger.debug(f"Failed to find DGN {result['dgn']} in loaded specification")
                 return result
 
         decoder = self.spec[dgn]

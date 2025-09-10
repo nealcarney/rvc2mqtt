@@ -202,11 +202,10 @@ class HvacClass(EntityPluginBaseClass):
 
         self._set_point_temperature = 16.09
 
-        self.device = {"manufacturer": "RV-C",
-                       "via_device": self.mqtt_support.get_bridge_ha_name(),
-                       "identifiers": self.unique_device_id,
-                       "name": self.name,
-                       "model": "RV-C Thermostat from THERMOSTAT_STATUS_1"
+        self.device = {"manufacturer": "Firefly Integrations",
+                       "identifiers": "Temp1",
+                       "name": "Firefly",
+                       "model": "G12"
                        }
 
         # Allow MQTT to control mode

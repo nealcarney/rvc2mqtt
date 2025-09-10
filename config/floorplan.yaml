@@ -1,0 +1,43 @@
+floorplan:
+#Lights
+  - name: DC_DIMMER_STATUS_3
+    instance: 22
+    type: light_switch
+    instance_name: Front ceiling
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 24
+    type: light_switch
+    instance_name: Galley
+
+#Tanks
+  - name: TANK_STATUS
+    instance: 3
+    type: tank_level
+    instance_name: Propane tank
+
+  - name: TANK_STATUS
+    instance: 2
+    type: tank_level
+    instance_name: Grey water tank
+
+  - name: TANK_STATUS
+    instance: 1
+    type: tank_level
+    instance_name: Black water tank
+
+  - name: TANK_STATUS
+    instance: 0
+    type: tank_level
+    instance_name: Freshwater tank
+
+#Switches
+  - name: DC_DIMMER_STATUS_3
+    instance: 40
+    type: power_switch
+    instance_name: Starlink
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 44
+    type: power_switch
+    instance_name: Water pump

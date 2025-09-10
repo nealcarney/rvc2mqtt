@@ -105,11 +105,10 @@ class WaterHeaterClass(EntityPluginBaseClass):
         self.failure_dc_power = "unknown" # RO mqtt and RVC (power present, power not present)
         self.failure_dc_warning = "unknown" # RO mqtt and RVC (power ok, power low)
 
-        self.device = {"manufacturer": "RV-C",
-                       "via_device": self.mqtt_support.get_bridge_ha_name(),
-                       "identifiers": self.unique_device_id,
-                       "name": self.name,
-                       "model": "RV-C Water Heater from WATERHEATER_STATUS"
+        self.device = {"manufacturer": "Firefly Integrations",
+                       "identifiers": "Temp1",
+                       "name": "Firefly",
+                       "model": "G12"
                        }
 
         # Allow MQTT to control gas - on off

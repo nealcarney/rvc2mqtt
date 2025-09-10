@@ -4,6 +4,7 @@ WORKDIR /app
 WORKDIR /app/rvc2mqtt
 ADD rvc2mqtt .
 WORKDIR /app
+RUN mkdir /config
 COPY setup.py setup.py
 COPY readme.md readme.md
 COPY requirement.txt requirement.txt

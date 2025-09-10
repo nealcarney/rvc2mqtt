@@ -81,11 +81,10 @@ class Diagnostic(EntityPluginBaseClass):
         # init members of the class
         self.name = data['instance_name']
         self.source_id = data['source_id']
-        self.device = {"manufacturer": "RV-C",
-                       "via_device": self.mqtt_support.get_bridge_ha_name(),
-                       "identifiers": self.unique_device_id,
-                       "name": self.name,
-                       "model": "RV-C Diagnostic Endpoint from DM_RV"
+        self.device = {"manufacturer": "Firefly Integrations",
+                       "identifiers": "Temp1",
+                       "name": "Firefly",
+                       "model": "G12"
                        }
         self.warning_attributes = {}
         self.warning_msg = ""
