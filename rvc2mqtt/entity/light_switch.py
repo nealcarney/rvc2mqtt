@@ -66,7 +66,7 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
         self.messagestate = "unknown"
 
         self.device = {"manufacturer": "Firefly Integrations",
-                       "identifiers": "Temp1",
+                       "identifiers": "Firefly",
                        "name": "Firefly",
                        "model": "G12"
                        }

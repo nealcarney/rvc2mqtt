@@ -2,12 +2,12 @@ floorplan:
 #Lights
   - name: DC_DIMMER_STATUS_3
     instance: 22
-    type: light_switch
+    type: dimmer_switch
     instance_name: Front ceiling
 
   - name: DC_DIMMER_STATUS_3
     instance: 24
-    type: light_switch
+    type: dimmer_switch
     instance_name: Galley
 
 #Tanks

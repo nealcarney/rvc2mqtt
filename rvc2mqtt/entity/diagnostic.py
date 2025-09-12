@@ -82,7 +82,7 @@ class Diagnostic(EntityPluginBaseClass):
         self.name = data['instance_name']
         self.source_id = data['source_id']
         self.device = {"manufacturer": "Firefly Integrations",
-                       "identifiers": "Temp1",
+                       "identifiers": "Firefly",
                        "name": "Firefly",
                        "model": "G12"
                        }

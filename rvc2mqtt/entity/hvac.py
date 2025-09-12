@@ -203,7 +203,7 @@ class HvacClass(EntityPluginBaseClass):
         self._set_point_temperature = 16.09
 
         self.device = {"manufacturer": "Firefly Integrations",
-                       "identifiers": "Temp1",
+                       "identifiers": "Firefly",
                        "name": "Firefly",
                        "model": "G12"
                        }

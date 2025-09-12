@@ -44,7 +44,7 @@ class DcSystemSensor_DC_SOURCE_STATUS_1(EntityPluginBaseClass):
 
         self.name = data['instance_name']
         self.device = {"manufacturer": "Firefly Integrations",
-                       "identifiers": "Temp1",
+                       "identifiers": "Firefly",
                        "name": "Firefly",
                        "model": "G12"
                        }

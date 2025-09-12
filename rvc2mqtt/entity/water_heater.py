@@ -106,7 +106,7 @@ class WaterHeaterClass(EntityPluginBaseClass):
         self.failure_dc_warning = "unknown" # RO mqtt and RVC (power ok, power low)
 
         self.device = {"manufacturer": "Firefly Integrations",
-                       "identifiers": "Temp1",
+                       "identifiers": "Firefly",
                        "name": "Firefly",
                        "model": "G12"
                        }

@@ -47,7 +47,7 @@ class TankLevelSensor_TANK_STATUS(EntityPluginBaseClass):
         self.instance_name = self._get_instance_name(self.instance)
 
         self.device = {"manufacturer": "Firefly Integrations",
-                       "identifiers": "Temp1",
+                       "identifiers": "Firefly",
                        "name": "Firefly",
                        "model": "G12"
                        }
