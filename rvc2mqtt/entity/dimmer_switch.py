@@ -76,25 +76,18 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
 
         if self._is_entry_match(self.rvc_match_status, new_message):
             self.Logger.debug(f"Msg Match Status: {str(new_message)}")
-            if new_message["operating_status_brightness"] != 0.0:
-                self.messagestate = LightSwitch_DC_DIMMER_STATUS_3.LIGHT_ON
-            elif new_message["operating_status_brightness"] == 0.0:
-                self.messagestate = LightSwitch_DC_DIMMER_STATUS_3.LIGHT_OFF
-            else:
-                self.messagestate = "UNEXPECTED(" + \
-                    str(new_message["operating_status"]) + ")"
-                self.Logger.error(
-                    f"Unexpected RVC value {str(new_message['operating_status_brightness'])}")
-
-            # produce the HA MQTT state json
-            config = {"state": self.messagestate,
-                    "brightness": int(new_message["operating_status_brightness"])}
-            config_json = json.dumps(config)
+                   
+            self.messagestate = LightSwitch_DC_DIMMER_STATUS_3.LIGHT_ON \
+                if new_message["load_status"] == "01" \
+                else LightSwitch_DC_DIMMER_STATUS_3.LIGHT_OFF
 
             # Only publish if the state has changed
             if self.messagestate != self.state or new_message["operating_status_brightness"] != self.brightness:
+                # produce the HA MQTT state json
+                state_json = json.dumps({"state": self.messagestate,
+                        "brightness": new_message["operating_status_brightness"]})               
                 self.mqtt_support.client.publish(
-                    self.status_topic, config_json, retain=True)
+                    self.status_topic, state_json, retain=True)
                 self.state = self.messagestate
                 self.brightness = new_message["operating_status_brightness"]
             return True
@@ -102,7 +95,7 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
         elif self._is_entry_match(self.rvc_match_command, new_message):
             # This is the command.  Just eat the message so it doesn't show up
             # as unhandled.
-            self.Logger.debug(f"Msg Match Command: {str(new_message)}")
+            self.Logger.info(f"Msg Match Command: {str(new_message)}")
             return True
         return False
 
@@ -111,15 +104,19 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
             f"MQTT Msg Received on topic {topic} with payload {payload}")
 
         if topic == self.command_topic:
-            if payload.lower() == LightSwitch_DC_DIMMER_STATUS_3.LIGHT_OFF:
+            json_payload = json.loads(payload)
+            if json_payload["state"].lower() == LightSwitch_DC_DIMMER_STATUS_3.LIGHT_OFF:
+            #If off command, only toggle off if currently on
                 if self.state != LightSwitch_DC_DIMMER_STATUS_3.LIGHT_OFF:
                     self._rvc_light_toggle()
-            elif payload.lower() == LightSwitch_DC_DIMMER_STATUS_3.LIGHT_ON:
-                if self.state != LightSwitch_DC_DIMMER_STATUS_3.LIGHT_ON:
+            elif "brightness" not in json_payload:
+            #If on command without brightness, toggle off if already on
+                 if self.state != LightSwitch_DC_DIMMER_STATUS_3.LIGHT_ON:
                     self._rvc_light_toggle()
             else:
-                self.Logger.warning(
-                    f"Invalid payload {payload} for topic {topic}")
+            #If on command with brightness, set brightness
+                self._rvc_change_brightness(json_payload["brightness"])
+                self.Logger.info(f"Brightness: {str(json_payload["brightness"])}")
 
     """
     On:
@@ -129,48 +126,30 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
     2024-09-10 22:00:39 {'arbitration_id': '0x19fedbfd', 'data': '20FFFA05FF00FFFF', 'priority': '6', 'dgn_h': '1FE', 'dgn_l': 'DB', 'dgn': '1FEDB', 'source_id': 'FD', 'name': 'DC_DIMMER_COMMAND_2', 'instance': 32, 'group': '11111111', 'desired_level': 125.0, 'command': 5, 'command_definition': 'toggle', 'delay_duration': 255, 'interlock': '00', 'interlock_definition': 'no interlock active'}
     """
 
-    def _rvc_light_off(self):
-        # 01 00 FA 00 03 FF 0000
-        msg_bytes = bytearray(8)
-        struct.pack_into("<BBBBBBB", msg_bytes, 0, self.rvc_instance, int(
-            self.rvc_group, 2), 251, 3, 0, 0, 0)
-        self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
-
-    def _rvc_light_on(self):
-
-        # 01 00 FA 00 01 FF 0000
-        msg_bytes = bytearray(8)
-        struct.pack_into("<BBBBBBB", msg_bytes, 0, self.rvc_instance, int(
-            self.rvc_group, 2), 251, 1, 0xFF, 0, 0)
-        self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
-
     def _rvc_light_toggle(self):
-
+        #Command 5 for toggle with 250 brightness for dimmed memory value
         msg_bytes = bytearray(8)
         struct.pack_into("<BBBBBBBB", msg_bytes, 0, self.rvc_instance, int(
             self.rvc_group, 2), 250, 5, 0xFF, 0, 0xFF, 0xFF)
         self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
 
+    def _rvc_change_brightness(self, brightness: int):
+        #Command 0 for ON with brightness scaled 0-200 (precision 0.5)
+        msg_bytes = bytearray(8)
+        struct.pack_into("<BBBBBBB", msg_bytes, 0, self.rvc_instance, int(
+            self.rvc_group, 2), int(brightness*2), 0, 0xFF, 0, 0)
+        self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
+
     def initialize(self):
-        """ Optional function
-        Will get called once when the object is loaded.
-        RVC canbus tx queue is available
-        mqtt client is ready.
-
-        This can be a good place to request data
-
-        """
-
-        # produce the HA MQTT discovery config json
+        # Prepare the HA auto discovery info
         config = {"name": self.name,
                   "state_topic": self.status_topic,
                   "command_topic": self.command_topic,
-                  "command_on_template": "on",
-                  "command_off_template": "off",
+                  "command_on_template": '{"state": "on" {%- if brightness is defined -%}, "brightness": {{ (brightness | float / 2.55) | round(0)}} {%- endif -%}}',
+                  "command_off_template": '{"state": "off"}',
                   "qos": 1, "retain": False,
                   "state_template": "{{ value_json.state }}",
                   "brightness_template": "{{ value_json.brightness | float | multiply(2.55) | round(0)}}",
-                  "brightness_scale": 100,
                   "unique_id": self.unique_device_id,
                   "device": self.device,
                   "schema": "template"}             #VERY IMPORTANT!
@@ -185,8 +164,6 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
        # publish info to mqtt
         self.mqtt_support.client.publish(
             ha_config_topic, config_json, retain=True)
-        # self.mqtt_support.client.publish(
-        #     self.status_topic, self.state, retain=True)
 
         # request dgn report - this should trigger that dimmer to report
         # dgn = 1FEDA which is actually  DA FE 01 <instance> FF 00 00 00

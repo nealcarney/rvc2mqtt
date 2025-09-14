@@ -1,5 +1,5 @@
 """
-A dimmer switch
+A vent fan test
 
 Copyright 2022 Sean Brogan
 SPDX-License-Identifier: Apache-2.0
@@ -26,20 +26,20 @@ from rvc2mqtt.mqtt import MQTT_Support
 from rvc2mqtt.entity import EntityPluginBaseClass
 
 
-class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
-    FACTORY_MATCH_ATTRIBUTES = {"name": "DC_DIMMER_STATUS_3", "type": "light_switch"}
+class VentFan_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
+    FACTORY_MATCH_ATTRIBUTES = {"name": "DC_DIMMER_STATUS_3", "type": "vent_fan"}
     """
-    Binary light switch that is tied to RVC DGN of DC_DIMMER_STATUS_3 and DC_DIMMER_COMMAND_2
+    Vent fan switch that is tied to RVC DGN of DC_DIMMER_STATUS_3 and DC_DIMMER_COMMAND_2
     """
-    LIGHT_ON = "on"
-    LIGHT_OFF = "off"
+    SWITCH_ON = "ON"
+    SWITCH_OFF = "OFF"
 
     def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = "light-i" + str(data["instance"])
+        self.id = "vent-fan-i" + str(data["instance"])
         super().__init__(data, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
-        # Allow MQTT to control light
+        # Allow MQTT to control switch
         self.command_topic = mqtt_support.make_device_topic_string(
             self.id, None, False)
         self.mqtt_support.register(self.command_topic, self.process_mqtt_msg)
@@ -56,7 +56,7 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
         if 'group' in data:
             self.rvc_group = data['group']
         self.name = data['instance_name']
-        self.state = "unknown"
+        self.state = "off"
         self.messagestate = "unknown"
 
         self.device = {"manufacturer": "Firefly Integrations",
@@ -76,9 +76,9 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
         if self._is_entry_match(self.rvc_match_status, new_message):
             self.Logger.debug(f"Msg Match Status: {str(new_message)}")
                    
-            self.messagestate = LightSwitch_DC_DIMMER_STATUS_3.LIGHT_ON \
+            self.messagestate = VentFan_DC_DIMMER_STATUS_3.SWITCH_ON \
                 if new_message["load_status"] == "01" \
-                else LightSwitch_DC_DIMMER_STATUS_3.LIGHT_OFF
+                else VentFan_DC_DIMMER_STATUS_3.SWITCH_OFF
 
             # Only publish if the state has changed
             if self.messagestate != self.state:
@@ -95,13 +95,14 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
         return False
 
     def process_mqtt_msg(self, topic, payload, properties = None):
-        self.Logger.debug(
-            f"MQTT Msg Received on topic {topic} with payload {payload}")
-
+        self.Logger.debug(f"MQTT Msg Received on topic {topic} with payload {payload}")
         if topic == self.command_topic:
-           # Only toggle if the state is changing
-           if payload.lower() != self.state:
-                self._rvc_light_toggle()
+            # Only toggle if the state is changing
+            if payload != self.state:
+                if payload == VentFan_DC_DIMMER_STATUS_3.SWITCH_OFF:
+                    self._rvc_switch_off()
+                else:
+                    self._rvc_switch_on()
 
     """
     On:
@@ -111,11 +112,19 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
     2024-09-10 22:00:39 {'arbitration_id': '0x19fedbfd', 'data': '20FFFA05FF00FFFF', 'priority': '6', 'dgn_h': '1FE', 'dgn_l': 'DB', 'dgn': '1FEDB', 'source_id': 'FD', 'name': 'DC_DIMMER_COMMAND_2', 'instance': 32, 'group': '11111111', 'desired_level': 125.0, 'command': 5, 'command_definition': 'toggle', 'delay_duration': 255, 'interlock': '00', 'interlock_definition': 'no interlock active'}
     """
 
-    def _rvc_light_toggle(self):
-        #Command 5 for toggle
+    def _rvc_switch_off(self):
+        # 01 00 FA 00 03 FF 0000
         msg_bytes = bytearray(8)
-        struct.pack_into("<BBBBBBBB", msg_bytes, 0, self.rvc_instance, int(
-            self.rvc_group, 2), 250, 5, 0xFF, 0, 0xFF, 0xFF)
+        struct.pack_into("<BBBBBBH", msg_bytes, 0, self.rvc_instance, int(
+            self.rvc_group, 2), 0, 3, 0xFF, 0, 0xFF)
+        self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
+
+    def _rvc_switch_on(self):
+
+        # 01 00 FA 00 01 FF 0000
+        msg_bytes = bytearray(8)
+        struct.pack_into("<BBBBBBH", msg_bytes, 0, self.rvc_instance, int(
+            self.rvc_group, 2), 200, 2, 0xFF, 0, 0xFF)
         self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
 
     def initialize(self):
@@ -124,8 +133,8 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
                   "state_topic": self.status_topic,
                   "command_topic": self.command_topic,
                   "qos": 1, "retain": False,
-                  "payload_on": LightSwitch_DC_DIMMER_STATUS_3.LIGHT_ON,
-                  "payload_off": LightSwitch_DC_DIMMER_STATUS_3.LIGHT_OFF,
+                  "payload_on": VentFan_DC_DIMMER_STATUS_3.SWITCH_ON,
+                  "payload_off": VentFan_DC_DIMMER_STATUS_3.SWITCH_OFF,
                   "unique_id": self.unique_device_id,
                   "device": self.device}
 
@@ -133,9 +142,9 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
 
         config_json = json.dumps(config)
 
-        #This tells Home Assistant to treat this as a light
+        #This tells Home Assistant to treat this as a switch
         ha_config_topic = self.mqtt_support.make_ha_auto_discovery_config_topic(
-            self.unique_device_id, "light")
+            self.unique_device_id, "fan")
 
         # publish info to mqtt
         self.mqtt_support.client.publish(

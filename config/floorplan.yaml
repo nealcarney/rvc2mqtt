@@ -1,5 +1,10 @@
 floorplan:
-#Lights
+#Dimmer lights
+  - name: DC_DIMMER_STATUS_3
+    instance: 21
+    type: dimmer_switch
+    instance_name: Bath
+
   - name: DC_DIMMER_STATUS_3
     instance: 22
     type: dimmer_switch
@@ -9,6 +14,52 @@ floorplan:
     instance: 24
     type: dimmer_switch
     instance_name: Galley
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 25
+    type: dimmer_switch
+    instance_name: Slide
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 26
+    type: dimmer_switch
+    instance_name: Accent
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 29
+    type: dimmer_switch
+    instance_name: Awning
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 32
+    type: dimmer_switch
+    instance_name: Porch
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 34
+    type: dimmer_switch
+    instance_name: TV
+
+#Binary lights
+  - name: DC_DIMMER_STATUS_3
+    instance: 30
+    type: light_switch
+    instance_name: Baggage
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 31
+    type: light_switch
+    instance_name: Assist handle
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 38
+    type: light_switch
+    instance_name: Reading
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 39
+    type: light_switch
+    instance_name: Shower
 
 #Tanks
   - name: TANK_STATUS
@@ -41,3 +92,14 @@ floorplan:
     instance: 44
     type: power_switch
     instance_name: Water pump
+
+#Fans
+  - name: DC_DIMMER_STATUS_3
+    instance: 3
+    type: vent_fan
+    instance_name: Galley fan
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 6
+    type: vent_fan
+    instance_name: Bathroom fan

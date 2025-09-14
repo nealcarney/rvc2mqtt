@@ -19,7 +19,6 @@ limitations under the License.
 """
 
 
-import queue
 import logging
 import struct
 import json
@@ -31,17 +30,12 @@ class PowerSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
     FACTORY_MATCH_ATTRIBUTES = {"name": "DC_DIMMER_STATUS_3", "type": "power_switch"}
     """
     Power switch that is tied to RVC DGN of DC_DIMMER_STATUS_3 and DC_DIMMER_COMMAND_2
-    Supports ON/OFF
-
-    TODO: support setting brightness
-
-
     """
     SWITCH_ON = "ON"
     SWITCH_OFF = "OFF"
 
     def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = "switch-1FEDB-i" + str(data["instance"])
+        self.id = "switch-i" + str(data["instance"])
         super().__init__(data, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
@@ -81,15 +75,10 @@ class PowerSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
 
         if self._is_entry_match(self.rvc_match_status, new_message):
             self.Logger.debug(f"Msg Match Status: {str(new_message)}")
-            if new_message["operating_status_brightness"] != 0.0:
-                self.messagestate = PowerSwitch_DC_DIMMER_STATUS_3.SWITCH_ON
-            elif new_message["operating_status_brightness"] == 0.0:
-                self.messagestate = PowerSwitch_DC_DIMMER_STATUS_3.SWITCH_OFF
-            else:
-                self.messagestate = "UNEXPECTED(" + \
-                    str(new_message["operating_status"]) + ")"
-                self.Logger.error(
-                    f"Unexpected RVC value {str(new_message['operating_status_brightness'])}")
+                   
+            self.messagestate = PowerSwitch_DC_DIMMER_STATUS_3.SWITCH_ON \
+                if new_message["load_status"] == "01" \
+                else PowerSwitch_DC_DIMMER_STATUS_3.SWITCH_OFF
 
             # Only publish if the state has changed
             if self.messagestate != self.state:
@@ -110,15 +99,9 @@ class PowerSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
             f"MQTT Msg Received on topic {topic} with payload {payload}")
 
         if topic == self.command_topic:
-            if payload.lower() == PowerSwitch_DC_DIMMER_STATUS_3.SWITCH_OFF:
-                if self.state != PowerSwitch_DC_DIMMER_STATUS_3.SWITCH_OFF:
-                    self._rvc_switch_toggle()
-            elif payload.lower() == PowerSwitch_DC_DIMMER_STATUS_3.SWITCH_ON:
-                if self.state != PowerSwitch_DC_DIMMER_STATUS_3.SWITCH_ON:
-                    self._rvc_switch_toggle()
-            else:
-                self.Logger.warning(
-                    f"Invalid payload {payload} for topic {topic}")
+            # Only toggle if the state is changing
+             if payload != self.state:
+                self._rvc_switch_toggle()
 
     """
     On:
@@ -128,39 +111,15 @@ class PowerSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
     2024-09-10 22:00:39 {'arbitration_id': '0x19fedbfd', 'data': '20FFFA05FF00FFFF', 'priority': '6', 'dgn_h': '1FE', 'dgn_l': 'DB', 'dgn': '1FEDB', 'source_id': 'FD', 'name': 'DC_DIMMER_COMMAND_2', 'instance': 32, 'group': '11111111', 'desired_level': 125.0, 'command': 5, 'command_definition': 'toggle', 'delay_duration': 255, 'interlock': '00', 'interlock_definition': 'no interlock active'}
     """
 
-    def _rvc_switch_off(self):
-        # 01 00 FA 00 03 FF 0000
-        msg_bytes = bytearray(8)
-        struct.pack_into("<BBBBBBB", msg_bytes, 0, self.rvc_instance, int(
-            self.rvc_group, 2), 251, 3, 0, 0, 0)
-        self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
-
-    def _rvc_switch_on(self):
-
-        # 01 00 FA 00 01 FF 0000
-        msg_bytes = bytearray(8)
-        struct.pack_into("<BBBBBBB", msg_bytes, 0, self.rvc_instance, int(
-            self.rvc_group, 2), 251, 1, 0xFF, 0, 0)
-        self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
-
     def _rvc_switch_toggle(self):
-
+        #Command 5 for toggle
         msg_bytes = bytearray(8)
         struct.pack_into("<BBBBBBBB", msg_bytes, 0, self.rvc_instance, int(
             self.rvc_group, 2), 250, 5, 0xFF, 0, 0xFF, 0xFF)
         self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
 
     def initialize(self):
-        """ Optional function
-        Will get called once when the object is loaded.
-        RVC canbus tx queue is available
-        mqtt client is ready.
-
-        This can be a good place to request data
-
-        """
-
-        # produce the HA MQTT discovery config json
+        # Prepare the HA auto discovery info
         config = {"name": self.name,
                   "state_topic": self.status_topic,
                   "command_topic": self.command_topic,
@@ -181,8 +140,6 @@ class PowerSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
         # publish info to mqtt
         self.mqtt_support.client.publish(
             ha_config_topic, config_json, retain=True)
-        self.mqtt_support.client.publish(
-            self.status_topic, self.state, retain=True)
 
         # request dgn report - this should trigger that dimmer to report
         # dgn = 1FEDA which is actually  DA FE 01 <instance> FF 00 00 00

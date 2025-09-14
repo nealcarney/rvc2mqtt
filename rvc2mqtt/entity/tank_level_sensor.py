@@ -33,7 +33,7 @@ class TankLevelSensor_TANK_STATUS(EntityPluginBaseClass):
     """
 
     def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = "tanklevel-1FFB7-i" + str(data["instance"])
+        self.id = "tanklevel-i" + str(data["instance"])
         super().__init__(data, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
