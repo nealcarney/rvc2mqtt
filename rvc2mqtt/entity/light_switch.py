@@ -34,9 +34,9 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
     LIGHT_ON = "on"
     LIGHT_OFF = "off"
 
-    def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = "light-i" + str(data["instance"])
-        super().__init__(data, mqtt_support)
+    def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
+        self.id = "light-i" + str(floorplan_info["instance"])
+        super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
         # Allow MQTT to control light
@@ -45,17 +45,17 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
         self.mqtt_support.register(self.command_topic, self.process_mqtt_msg)
 
         # RVC message must match the following to be this device
-        self.rvc_match_status = { "name": "DC_DIMMER_STATUS_3", "instance": data['instance']}
-        self.rvc_match_command= { "name": "DC_DIMMER_COMMAND_2", "instance": data['instance']}
+        self.rvc_match_status = { "name": "DC_DIMMER_STATUS_3", "instance": floorplan_info['instance']}
+        self.rvc_match_command= { "name": "DC_DIMMER_COMMAND_2", "instance": floorplan_info['instance']}
 
         self.Logger.debug(f"Must match: {str(self.rvc_match_status)} or {str(self.rvc_match_command)}")
 
         # save these for later to send rvc msg
-        self.rvc_instance = data['instance']
+        self.rvc_instance = floorplan_info['instance']
         self.rvc_group = '11111111'
-        if 'group' in data:
-            self.rvc_group = data['group']
-        self.name = data['instance_name']
+        if 'group' in floorplan_info:
+            self.rvc_group = floorplan_info['group']
+        self.name = floorplan_info['instance_name']
         self.state = "unknown"
         self.messagestate = "unknown"
 

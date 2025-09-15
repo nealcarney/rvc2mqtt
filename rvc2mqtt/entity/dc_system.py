@@ -33,16 +33,16 @@ class DcSystemSensor_DC_SOURCE_STATUS_1(EntityPluginBaseClass):
 
     """
 
-    def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = "dc_system-i" + str(data["instance"])
-        super().__init__(data, mqtt_support)
+    def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
+        self.id = "dc_system-i" + str(floorplan_info["instance"])
+        super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
         # RVC message must match the following to be this device
-        self.rvc_match_status = {"name": "DC_SOURCE_STATUS_1", "instance": data['instance']}
+        self.rvc_match_status = {"name": "DC_SOURCE_STATUS_1", "instance": floorplan_info['instance']}
         self.Logger.debug(f"Must match: {str(self.rvc_match_status)}")
 
-        self.name = data['instance_name']
+        self.name = floorplan_info['instance_name']
         self.device = {"manufacturer": "Firefly Integrations",
                        "identifiers": "Firefly",
                        "name": "Firefly",

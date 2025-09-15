@@ -177,23 +177,23 @@ class HvacClass(EntityPluginBaseClass):
     RVC_SCHEDULE_MODE_TO_RVC_SCHEDULE_MODE_VALUE = {"disabled": 0, "enabled": 1}
 
 
-    def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = f"thermostat-i" + str(data["instance"])
+    def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
+        self.id = f"thermostat-i" + str(floorplan_info["instance"])
 
-        super().__init__(data, mqtt_support)
+        super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
         # RVC message must match the following status or command
-        self.rvc_match_status = {"name": "THERMOSTAT_STATUS_1", "instance": data['instance']}
-        self.rvc_match_command = {"name": "THERMOSTAT_COMMAND_1", "instance": data['instance']}
+        self.rvc_match_status = {"name": "THERMOSTAT_STATUS_1", "instance": floorplan_info['instance']}
+        self.rvc_match_command = {"name": "THERMOSTAT_COMMAND_1", "instance": floorplan_info['instance']}
 
         self.Logger.debug(f"Must match: {str(self.rvc_match_status)} {str(self.rvc_match_command)}")
 
         self.temperature_entity_link = None
         
         # fields for a thermostat object
-        self.name = data["instance_name"]
-        self.rvc_instance = data["instance"]
+        self.name = floorplan_info["instance_name"]
+        self.rvc_instance = floorplan_info["instance"]
         self.scheduled_mode = "disabled"  # don't support this
 
         self._mode     = HvacMode.OFF

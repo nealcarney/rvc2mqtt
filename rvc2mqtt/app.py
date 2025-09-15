@@ -112,6 +112,9 @@ class app(object):
             if obj is not None:
                 # add entity links if defined.  This allows one entity to reference another entity
                 for link in obj.entity_links:
+                    #This is bad design...it looks at self.entity_list which is being built incrementally
+                    #but it needs some kind of two pass system.  Right now it only works
+                    #if the parent linked entity is defined first in the floorplan.
                     requested_entity = next(filter(lambda entry: entry.link_id == link, self.entity_list), None)
                     if requested_entity is not None:
                         obj.add_entity_link(requested_entity)

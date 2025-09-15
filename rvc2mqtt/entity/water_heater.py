@@ -75,22 +75,22 @@ class WaterHeaterClass(EntityPluginBaseClass):
     ON = "on"
     OFF = "off"
 
-    def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = f"waterheater-i" + str(data["instance"])
+    def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
+        self.id = f"waterheater-i" + str(floorplan_info["instance"])
 
-        super().__init__(data, mqtt_support)
+        super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
         # RVC message must match the following status or command
-        self.rvc_match_status = {"name": "WATERHEATER_STATUS", "instance": data['instance']}
-        self.rvc_match_command = {"name": "WATERHEATER_COMMAND", "instance": data['instance']}
-        self.rvc_match_command2 = {"name": "WATERHEATER_COMMAND2", "instance": data['instance']}
+        self.rvc_match_status = {"name": "WATERHEATER_STATUS", "instance": floorplan_info['instance']}
+        self.rvc_match_command = {"name": "WATERHEATER_COMMAND", "instance": floorplan_info['instance']}
+        self.rvc_match_command2 = {"name": "WATERHEATER_COMMAND2", "instance": floorplan_info['instance']}
 
         self.Logger.debug(f"Must match: {str(self.rvc_match_status)} {str(self.rvc_match_command)} {str(self.rvc_match_command2)}")
         
         # fields for a water heater object
-        self.name = data["instance_name"]
-        self.instance = data['instance']
+        self.name = floorplan_info["instance_name"]
+        self.instance = floorplan_info['instance']
         self.mode = "unknown"  # R/W mqtt and RVC (off, combustion, electric, gas/electric, auto, test gas, test electric )
         self.gas_mode = "unknown"
         self.ac_mode = "unknown"

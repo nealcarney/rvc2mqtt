@@ -54,13 +54,13 @@ class Diagnostic(EntityPluginBaseClass):
 
     """
 
-    def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = "diagnostic-s" + str(data["source_id"])
-        super().__init__(data, mqtt_support)
+    def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
+        self.id = "diagnostic-s" + str(floorplan_info["source_id"])
+        super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
         # RVC message must match the following to be this device
-        self.rvc_match_status = {"name": "DM_RV", "source_id": data['source_id']}
+        self.rvc_match_status = {"name": "DM_RV", "source_id": floorplan_info['source_id']}
         self.Logger.debug(f"Must match: {str(self.rvc_match_status)}")
 
         # make additional topics
@@ -79,8 +79,8 @@ class Diagnostic(EntityPluginBaseClass):
         
 
         # init members of the class
-        self.name = data['instance_name']
-        self.source_id = data['source_id']
+        self.name = floorplan_info['instance_name']
+        self.source_id = floorplan_info['source_id']
         self.device = {"manufacturer": "Firefly Integrations",
                        "identifiers": "Firefly",
                        "name": "Firefly",

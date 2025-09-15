@@ -1,5 +1,5 @@
 """
-A vent fan test
+A vent fan
 
 Copyright 2022 Sean Brogan
 SPDX-License-Identifier: Apache-2.0
@@ -30,13 +30,24 @@ class VentFan_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
     FACTORY_MATCH_ATTRIBUTES = {"name": "DC_DIMMER_STATUS_3", "type": "vent_fan"}
     """
     Vent fan switch that is tied to RVC DGN of DC_DIMMER_STATUS_3 and DC_DIMMER_COMMAND_2
+
+    This is a multi instance device
+    FLOORPLAN - Input
+
+    type: vent_fan
+    name: DC_DIMMER_STATUS_3
+    instance_name: <friendly name>   !!!the linked entity must contain "up" or "down" in its instance name
+    instance: <int>
+    link_id: <str for this node> (optional, only used for linking)
+    entity_links:
+      - <link id of associated vent lid switch>
     """
     SWITCH_ON = "ON"
     SWITCH_OFF = "OFF"
 
-    def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = "vent-fan-i" + str(data["instance"])
-        super().__init__(data, mqtt_support)
+    def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
+        self.id = "vent-fan-i" + str(floorplan_info["instance"])
+        super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
         # Allow MQTT to control switch
@@ -45,17 +56,20 @@ class VentFan_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
         self.mqtt_support.register(self.command_topic, self.process_mqtt_msg)
 
         # RVC message must match the following to be this device
-        self.rvc_match_status = { "name": "DC_DIMMER_STATUS_3", "instance": data['instance']}
-        self.rvc_match_command= { "name": "DC_DIMMER_COMMAND_2", "instance": data['instance']}
+        self.rvc_match_status = { "name": "DC_DIMMER_STATUS_3", "instance": floorplan_info['instance']}
+        self.rvc_match_command= { "name": "DC_DIMMER_COMMAND_2", "instance": floorplan_info['instance']}
 
         self.Logger.debug(f"Must match: {str(self.rvc_match_status)} or {str(self.rvc_match_command)}")
 
+        self.vent_lid_up = None
+        self.vent_lid_down = None
+
         # save these for later to send rvc msg
-        self.rvc_instance = data['instance']
+        self.rvc_instance = floorplan_info['instance']
         self.rvc_group = '11111111'
-        if 'group' in data:
-            self.rvc_group = data['group']
-        self.name = data['instance_name']
+        if 'group' in floorplan_info:
+            self.rvc_group = floorplan_info['group']
+        self.name = floorplan_info['instance_name']
         self.state = "off"
         self.messagestate = "unknown"
 
@@ -64,6 +78,17 @@ class VentFan_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
                        "name": "Firefly",
                        "model": "G12"
                        }
+
+    def add_entity_link(self, obj):
+        self.Logger.info(f"Adding entities")
+        if "up" in obj.name:
+            self.Logger.info(f"Linking up to {obj.name}")
+            self.vent_lid_up = obj
+        elif "down" in obj.name:
+            self.Logger.info(f"Linking down to {obj.name}")
+            self.vent_lid_down = obj
+        else:
+            self.Logger.error(f"Unknown vent lid link {obj.name}")
 
     def process_rvc_msg(self, new_message: dict) -> bool:
         """ Process an incoming message and determine if it
@@ -113,15 +138,17 @@ class VentFan_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
     """
 
     def _rvc_switch_off(self):
-        # 01 00 FA 00 03 FF 0000
         msg_bytes = bytearray(8)
+        #command 3 (OFF delay), 15 second delay
         struct.pack_into("<BBBBBBH", msg_bytes, 0, self.rvc_instance, int(
-            self.rvc_group, 2), 0, 3, 0xFF, 0, 0xFF)
+            self.rvc_group, 2), 0, 3, 15, 0, 0xFF)
         self.send_queue.put({"dgn": "1FEDB", "data": msg_bytes})
+        self.vent_lid_up.rvc_switch_off()
+        self.vent_lid_down.rvc_switch_on()
 
     def _rvc_switch_on(self):
-
-        # 01 00 FA 00 01 FF 0000
+        self.vent_lid_down.rvc_switch_off()
+        self.vent_lid_up.rvc_switch_on()        
         msg_bytes = bytearray(8)
         struct.pack_into("<BBBBBBH", msg_bytes, 0, self.rvc_instance, int(
             self.rvc_group, 2), 200, 2, 0xFF, 0, 0xFF)

@@ -32,18 +32,18 @@ class TankLevelSensor_TANK_STATUS(EntityPluginBaseClass):
 
     """
 
-    def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = "tanklevel-i" + str(data["instance"])
-        super().__init__(data, mqtt_support)
+    def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
+        self.id = "tanklevel-i" + str(floorplan_info["instance"])
+        super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
         # RVC message must match the following to be this device
-        self.rvc_match_status = {"name": "TANK_STATUS", "instance": data['instance']}
+        self.rvc_match_status = {"name": "TANK_STATUS", "instance": floorplan_info['instance']}
         self.level = 100
         self.Logger.debug(f"Must match: {str(self.rvc_match_status)}")
 
-        self.name = data['instance_name']
-        self.instance = data['instance']
+        self.name = floorplan_info['instance_name']
+        self.instance = floorplan_info['instance']
         self.instance_name = self._get_instance_name(self.instance)
 
         self.device = {"manufacturer": "Firefly Integrations",

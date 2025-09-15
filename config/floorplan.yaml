@@ -95,11 +95,42 @@ floorplan:
 
 #Fans
   - name: DC_DIMMER_STATUS_3
+    instance: 4
+    type: vent_lid
+    instance_name: Galley fan up
+    link_id: galley-fan-up
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 5
+    type: vent_lid
+    instance_name: Galley fan down
+    link_id: galley-fan-down
+
+  - name: DC_DIMMER_STATUS_3
     instance: 3
     type: vent_fan
     instance_name: Galley fan
+    entity_links:
+      - galley-fan-up
+      - galley-fan-down
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 7
+    type: vent_lid
+    instance_name: Bathroom fan up
+    link_id: bathroom-fan-up
+
+  - name: DC_DIMMER_STATUS_3
+    instance: 8
+    type: vent_lid
+    instance_name: Bathroom fan down
+    link_id: bathroom-fan-down
 
   - name: DC_DIMMER_STATUS_3
     instance: 6
     type: vent_fan
     instance_name: Bathroom fan
+    entity_links:
+      - bathroom-fan-up
+      - bathroom-fan-down
+
