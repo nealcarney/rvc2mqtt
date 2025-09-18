@@ -80,12 +80,12 @@ class VentFan_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
                        }
 
     def add_entity_link(self, obj):
-        self.Logger.info(f"Adding entities")
+        self.Logger.debug(f"Adding entities")
         if "up" in obj.name:
-            self.Logger.info(f"Linking up to {obj.name}")
+            self.Logger.debug(f"Linking up to {obj.name}")
             self.vent_lid_up = obj
         elif "down" in obj.name:
-            self.Logger.info(f"Linking down to {obj.name}")
+            self.Logger.debug(f"Linking down to {obj.name}")
             self.vent_lid_down = obj
         else:
             self.Logger.error(f"Unknown vent lid link {obj.name}")

@@ -97,18 +97,18 @@ floorplan:
   - name: DC_DIMMER_STATUS_3
     instance: 4
     type: vent_lid
-    instance_name: Galley fan up
+    instance_name: Galley fan up    #must contain up or down for fans
     link_id: galley-fan-up
 
   - name: DC_DIMMER_STATUS_3
     instance: 5
     type: vent_lid
-    instance_name: Galley fan down
+    instance_name: Galley fan down  #must contain up or down for fans
     link_id: galley-fan-down
 
   - name: DC_DIMMER_STATUS_3
     instance: 3
-    type: vent_fan
+    type: vent_fan                  #Parent fan entity must come after lids
     instance_name: Galley fan
     entity_links:
       - galley-fan-up
@@ -134,3 +134,8 @@ floorplan:
       - bathroom-fan-up
       - bathroom-fan-down
 
+#Water heater
+  - name: WATERHEATER_STATUS
+    instance: 200
+    type: water_heater
+    instance_name: Water heater

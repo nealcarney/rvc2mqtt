@@ -17,7 +17,7 @@ logger:
       maxBytes: 10485760 #10 mb
       backupCount: 1
       level: INFO
-      filename: /config/RVC2MQTT.log
+      filename: /app/config/RVC2MQTT.log
       mode: w
 
     # unhandled_file_handler:

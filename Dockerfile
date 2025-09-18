@@ -3,8 +3,8 @@ FROM python:3.12-bookworm
 WORKDIR /app
 WORKDIR /app/rvc2mqtt
 ADD rvc2mqtt .
+ADD config .
 WORKDIR /app
-RUN mkdir /config
 COPY setup.py setup.py
 COPY readme.md readme.md
 COPY requirement.txt requirement.txt
@@ -12,3 +12,4 @@ RUN pip3 install -r requirement.txt
 RUN pip3 install --no-cache-dir -e .
 
 CMD python3 -m rvc2mqtt.app
+#CMD ["sleep", "infinity"]

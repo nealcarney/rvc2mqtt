@@ -95,7 +95,7 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
         elif self._is_entry_match(self.rvc_match_command, new_message):
             # This is the command.  Just eat the message so it doesn't show up
             # as unhandled.
-            self.Logger.info(f"Msg Match Command: {str(new_message)}")
+            self.Logger.debug(f"Msg Match Command: {str(new_message)}")
             return True
         return False
 
@@ -116,7 +116,7 @@ class LightSwitch_DC_DIMMER_STATUS_3(EntityPluginBaseClass):
             else:
             #If on command with brightness, set brightness
                 self._rvc_change_brightness(json_payload["brightness"])
-                self.Logger.info(f"Brightness: {str(json_payload["brightness"])}")
+                self.Logger.debug(f"Brightness: {str(json_payload["brightness"])}")
 
     """
     On:
