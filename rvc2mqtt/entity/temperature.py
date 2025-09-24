@@ -32,22 +32,22 @@ class TemperatureSensor_THERMOSTAT_AMBIENT_STATUS(EntityPluginBaseClass):
 
     """
 
-    def __init__(self, data: dict, mqtt_support: MQTT_Support):
-        self.id = "temperature-1FF9C-i" + str(data["instance"])
-        super().__init__(data, mqtt_support)
+    def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
+        self.id = "temperature-1FF9C-i" + str(floorplan_info["instance"])
+        super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
         # RVC message must match the following to be this device
-        self.rvc_match_status = {"name": "THERMOSTAT_AMBIENT_STATUS", "instance": data['instance']}
+        self.rvc_match_status = {"name": "THERMOSTAT_AMBIENT_STATUS", "instance": floorplan_info['instance']}
         self.reported_temp = 100  # should never get this hot in C
         self.Logger.debug(f"Must match: {str(self.rvc_match_status)}")
 
-        self.name = data['instance_name']
-        self.device = {"manufacturer": "RV-C",
-                       "via_device": self.mqtt_support.get_bridge_ha_name(),
-                       "identifiers": self.unique_device_id,
-                       "name": self.name,
-                       "model": "RV-C Temperature Sensor from THERMOSTAT_AMBIENT_STATUS"
+        self.name = floorplan_info['instance_name']
+        self.link_id = floorplan_info['link_id']
+        self.device = {"manufacturer": "Firefly Integrations",
+                       "identifiers": "Firefly",
+                       "name": "Firefly",
+                       "model": "G12"
                        }
 
     def process_rvc_msg(self, new_message: dict) -> bool:

@@ -1,0 +1,81 @@
+"""
+A furnace action entity linked to a thermostat
+
+Copyright 2022 Sean Brogan
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+"""
+
+from enum import Enum
+import logging
+import struct
+from rvc2mqtt.mqtt import MQTT_Support
+from rvc2mqtt.entity import EntityPluginBaseClass
+
+class FURNACE_ACTION_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
+    FACTORY_MATCH_ATTRIBUTES = {"name": "THERMOSTAT_STATUS_1", "type": "furnace_action"}
+    """
+    A furnace action entity linked to a thermostat.  
+    This tells the thermostat whether the furnace is currently heating or idle.
+    """
+
+    def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
+        self.id = "furnace-action-i" + str(floorplan_info["instance"])
+        super().__init__(floorplan_info, mqtt_support)
+        self.Logger = logging.getLogger(__class__.__name__)
+        self.name =  floorplan_info["instance_name"]
+        self.link_id = floorplan_info["link_id"]
+        self.rvc_instance = floorplan_info['instance']
+        self.status_data = ""
+        self.command_data = ""
+        self._changed = True
+        self._action = ""
+        self.thermostat_entity_link = None
+
+        # RVC message must match the following to be this device
+        self.rvc_match_status = { "name": "THERMOSTAT_STATUS_1", "instance": floorplan_info['instance']}
+        self.rvc_match_command = { "name": "THERMOSTAT_COMMAND_1", "instance": floorplan_info['instance']}
+
+    @property
+    def action(self) -> str:
+        return self._action
+
+    @action.setter
+    def action(self, value: str):
+        if value != self._action:
+            self._action = value
+            self._changed = True
+
+    def process_rvc_msg(self, new_message: dict) -> bool:
+        if self._is_entry_match(self.rvc_match_status, new_message):
+            # Log if data has changed
+            if self.status_data != new_message["data"]:
+                self.status_data = new_message["data"]
+                self.Logger.debug(f"New Status: {str(new_message)}")
+                self.action = "heating" if new_message["operating_mode_definition"] == "heat" else "idle"
+                self.Logger.info(f"Received RVC update with heat action: {self.action}")
+                # If action has changed, update thermostat entity'''
+                if self._changed:
+                    self.Logger.info(f"Notifying thermostat of heat action: {self.action}") 
+                    self.thermostat_entity_link.update_thermostat_action()
+                    self._changed = False
+            return True
+        elif self._is_entry_match(self.rvc_match_command, new_message):
+            # Log if data has changed
+            if self.command_data != new_message["data"]:
+                self.command_data = new_message["data"]
+                self.Logger.debug(f"New Command: {str(new_message)}")
+            return True
+        return False

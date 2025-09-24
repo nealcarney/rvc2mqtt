@@ -17,7 +17,7 @@ logger:
       maxBytes: 10485760 #10 mb
       backupCount: 1
       level: INFO
-      filename: /app/config/RVC2MQTT.log
+      filename: /app/rvc2mqtt/config/RVC2MQTT.log
       mode: w
 
     # unhandled_file_handler:
@@ -26,15 +26,24 @@ logger:
     #   maxBytes: 10485760 #10 mb
     #   backupCount: 1
     #   level: DEBUG
-    #   filename: /config/UNHANDLED_RVC.log
+    #   filename: /app/rvc2mqtt/config/UNHANDLED_RVC.log
 
     # rvc_bus_trace_handler:
     #   class: logging.handlers.RotatingFileHandler
     #   formatter: trace
-    #   filename: /config/RVC_FULL_BUS_TRACE.log
+    #   filename: /app/rvc2mqtt/config/RVC_FULL_BUS_TRACE.log
     #   maxBytes: 10485760 #10 mb
     #   backupCount: 3
     #   level: DEBUG
+
+    # testing_file_handler:
+    #   class: logging.handlers.RotatingFileHandler
+    #   formatter: default
+    #   maxBytes: 10485760 #10 mb
+    #   backupCount: 1
+    #   level: DEBUG
+    #   filename: /app/rvc2mqtt/config/TESTING.log
+    #   mode: w
 
   loggers:
     "": # root logger
@@ -53,6 +62,12 @@ logger:
     # "rvc_bus_trace": # all bus messages
     #   handlers:
     #     - rvc_bus_trace_handler
+    #   level: DEBUG
+    #   propagate: False
+
+    # "test_trace": # all bus messages
+    #   handlers:
+    #     - testing_file_handler
     #   level: DEBUG
     #   propagate: False
 

@@ -174,14 +174,19 @@ class app(object):
         # Log all rvc bus messages to custom logger so it can be routed or ignored
         logging.getLogger("rvc_bus_trace").debug(str(MsgDict))
 
+        # For testing purposes; remove when finished
+        #if MsgDict["dgn"] in ["1FFE2", "1FEF9"] and MsgDict["instance"] in [2, 3]:
+        #    logging.getLogger("test_trace").info(f"Msg: {str(MsgDict)}")
+
         # Find if this is a device entity in our list
         # Pass to object
 
         for item in self.entity_list:
-            if item.process_rvc_msg(MsgDict):
-                # Should we allow processing by more than one obj.
-                ##
-                return
+            item.process_rvc_msg(MsgDict)
+            # if item.process_rvc_msg(MsgDict):
+            #     # Should we allow processing by more than one obj.
+            #     ##
+            #     return
 
         # Use a custom logger so it can be routed easily or ignored
         logging.getLogger("unhandled_rvc").debug(f"Msg {str(MsgDict)}")
@@ -211,6 +216,8 @@ def load_the_config(config_file_path: Optional[os.PathLike]):
         with open(config_file_path, "r") as content:
             yaml = YAML.YAML(typ='safe')
             return yaml.load(content.read())
+    else:
+        logging.critical(f"Path is not valid: {config_file_path}")
 
 
 def main():

@@ -1,5 +1,5 @@
 floorplan:
-#Dimmer lights
+# Dimmer lights
   - name: DC_DIMMER_STATUS_3
     instance: 21
     type: dimmer_switch
@@ -40,7 +40,7 @@ floorplan:
     type: dimmer_switch
     instance_name: TV
 
-#Binary lights
+# Binary lights
   - name: DC_DIMMER_STATUS_3
     instance: 30
     type: light_switch
@@ -61,7 +61,7 @@ floorplan:
     type: light_switch
     instance_name: Shower
 
-#Tanks
+# Tanks
   - name: TANK_STATUS
     instance: 3
     type: tank_level
@@ -82,7 +82,7 @@ floorplan:
     type: tank_level
     instance_name: Freshwater tank
 
-#Switches
+# Switches
   - name: DC_DIMMER_STATUS_3
     instance: 40
     type: power_switch
@@ -93,7 +93,7 @@ floorplan:
     type: power_switch
     instance_name: Water pump
 
-#Fans
+# Fans
   - name: DC_DIMMER_STATUS_3
     instance: 4
     type: vent_lid
@@ -134,8 +134,56 @@ floorplan:
       - bathroom-fan-up
       - bathroom-fan-down
 
-#Water heater
+# Water heater
   - name: WATERHEATER_STATUS
     instance: 200
     type: water_heater
     instance_name: Water heater
+
+# HVAC
+  - name: THERMOSTAT_AMBIENT_STATUS
+    instance: 3
+    type: temperature
+    instance_name: Temperature
+    link_id: temperature
+
+  - name: THERMOSTAT_STATUS_1
+    type: furnace_mode
+    instance_name: Furnace mode
+    instance: 2
+    link_id: furnace-mode
+
+  - name: THERMOSTAT_STATUS_1
+    type: furnace_action
+    instance_name: Furnace action
+    instance: 200
+    link_id: furnace-action
+
+  - name: THERMOSTAT_STATUS_1
+    type: hvac
+    instance_name: Thermostat
+    instance: 3
+    entity_links:
+      - temperature
+      - furnace-mode
+      - furnace-action
+
+  - name: THERMOSTAT_STATUS_1
+    type: test
+    instance_name: Virtual AC
+    instance: 3
+
+  - name: THERMOSTAT_STATUS_1
+    type: test
+    instance_name: Aventa
+    instance: 161
+
+  - name: AIR_CONDITIONER_STATUS
+    type: test2
+    instance_name: Virtual AC2
+    instance: 1
+
+  - name: AIR_CONDITIONER_STATUS
+    type: test2
+    instance_name: Aventa2
+    instance: 161
