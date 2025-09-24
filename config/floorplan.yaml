@@ -159,6 +159,18 @@ floorplan:
     instance: 200
     link_id: furnace-action
 
+  - name: AIR_CONDITIONER_STATUS
+    type: aircon_action
+    instance_name: Aircon action
+    instance: 161
+    link_id: aircon-action
+
+  - name: THERMOSTAT_STATUS_1
+    type: aircon_mode
+    instance_name: Aircon mode
+    instance: 161
+    link_id: aircon-mode
+
   - name: THERMOSTAT_STATUS_1
     type: hvac
     instance_name: Thermostat
@@ -167,23 +179,10 @@ floorplan:
       - temperature
       - furnace-mode
       - furnace-action
-
-  - name: THERMOSTAT_STATUS_1
-    type: test
-    instance_name: Virtual AC
-    instance: 3
-
-  - name: THERMOSTAT_STATUS_1
-    type: test
-    instance_name: Aventa
-    instance: 161
+      - aircon-action
+      - aircon-mode
 
   - name: AIR_CONDITIONER_STATUS
     type: test2
     instance_name: Virtual AC2
     instance: 1
-
-  - name: AIR_CONDITIONER_STATUS
-    type: test2
-    instance_name: Aventa2
-    instance: 161

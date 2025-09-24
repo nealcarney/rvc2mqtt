@@ -1,5 +1,5 @@
 """
-A thermostat entity for testing purposes
+A generic thermostat entity for testing purposes
 
 Copyright 2022 Sean Brogan
 SPDX-License-Identifier: Apache-2.0

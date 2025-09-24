@@ -1,5 +1,5 @@
 """
-A furnace mode entity linked to a thermostat
+A air conditioner mode entity linked to a thermostat
 
 Copyright 2022 Sean Brogan
 SPDX-License-Identifier: Apache-2.0
@@ -24,9 +24,9 @@ import struct
 from rvc2mqtt.mqtt import MQTT_Support
 from rvc2mqtt.entity import EntityPluginBaseClass
 
-class FurnaceMode(Enum):
+class HvacMode(Enum):
     '''
-    simple class for the HVAC Mode which includes heat and off
+    simple class for the HVAC Mode which includes cool, dry and off
     
     '''
     OFF = 'off'
@@ -36,29 +36,29 @@ class FurnaceMode(Enum):
 
     @property
     def rvc_mode_for_rvc_msg(self) -> str:
-        # Either heat or off; cool and dry are not supported by furnace
-        if self == FurnaceMode.HEAT:
-            return 2
+        # Either heat or off; cool and dry are not supported by aircon
+        if self == HvacMode.COOL:
+            return 3
+        elif self == HvacMode.DRY:
+            return 6
         else:
             return 0
 
     @staticmethod
     def get_hvac_mode_from_rvc(rvc_mode:str):
-        if rvc_mode == "fan only":
-            return FurnaceMode.FAN_ONLY
-        elif rvc_mode == "window defrost/dehumidify":
-            return FurnaceMode.DRY
+        if rvc_mode == "window defrost/dehumidify":
+            return HvacMode.DRY
         else:
-            return FurnaceMode(rvc_mode)
+            return HvacMode(rvc_mode)
 
-class FURNACE_MODE_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
-    FACTORY_MATCH_ATTRIBUTES = {"name": "THERMOSTAT_STATUS_1", "type": "furnace_mode"}
+class AIRCON_MODE_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
+    FACTORY_MATCH_ATTRIBUTES = {"name": "THERMOSTAT_STATUS_1", "type": "aircon_mode"}
     """
-    A furnace mode entity linked to a thermostat
+    A air conditioner mode entity linked to a thermostat
     """
 
     def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
-        self.id = "furnace-mode-i" + str(floorplan_info["instance"])
+        self.id = "aircon-mode-i" + str(floorplan_info["instance"])
         super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
         self.name =  floorplan_info["instance_name"]
@@ -66,7 +66,7 @@ class FURNACE_MODE_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
         self.rvc_instance = floorplan_info['instance']
         self.status_data = ""
         self.command_data = ""
-        self._mode = FurnaceMode.OFF
+        self._mode = HvacMode.OFF
         self._changed = True
         self.thermostat_entity_link = None
 
@@ -75,11 +75,11 @@ class FURNACE_MODE_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
         self.rvc_match_command = { "name": "THERMOSTAT_COMMAND_1", "instance": floorplan_info['instance']}
 
     @property
-    def mode(self) -> FurnaceMode:
+    def mode(self) -> HvacMode:
         return self._mode
 
     @mode.setter
-    def mode(self, value: FurnaceMode):
+    def mode(self, value: HvacMode):
         if value != self._mode:
             self._mode = value
             self._changed = True
@@ -90,14 +90,14 @@ class FURNACE_MODE_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
             if self.status_data != new_message["data"]:
                 self.status_data = new_message["data"]
                 self.Logger.debug(f"New Status: {str(new_message)}")
-            self.mode = FurnaceMode.get_hvac_mode_from_rvc(new_message["operating_mode_definition"])
+            self.mode = HvacMode.get_hvac_mode_from_rvc(new_message["operating_mode_definition"])
             # Mode has changed; update mqtt
             if self._changed:
-                self.Logger.debug(f"Notifying thermostat of heat mode: {self.mode.value}") 
+                self.Logger.debug(f"Notifying thermostat of aircon mode: {self.mode.value}") 
                 self.thermostat_entity_link.update_thermostat_mode()
                 self._changed = False
                 # Since mode has changed, trigger update thermostat entity action
-                self.Logger.debug(f"Furnace mode calling update of thermostat link\r\n")
+                self.Logger.debug(f"Aircon mode calling update of thermostat link\r\n")
                 self.thermostat_entity_link.update_thermostat_action()
             return True
         elif self._is_entry_match(self.rvc_match_command, new_message):
@@ -116,8 +116,8 @@ class FURNACE_MODE_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
                
         """
         try:
-            mode = FurnaceMode(payload.lower())
-            self.Logger.debug(f"Furnace received mode {mode}")
+            mode = HvacMode(payload.lower())
+            self.Logger.debug(f"Aircon received mode {mode}")
             mi = mode.rvc_mode_for_rvc_msg
             fmi = 0
             smi = 0
@@ -129,4 +129,4 @@ class FURNACE_MODE_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
             self.send_queue.put({"dgn": "1FEF9", "data": msg_bytes})
 
         except Exception as e:
-            self.Logger.error(f"Exception trying to respond to furnace mode + {str(e)}")
+            self.Logger.error(f"Exception trying to respond to aircon mode + {str(e)}")

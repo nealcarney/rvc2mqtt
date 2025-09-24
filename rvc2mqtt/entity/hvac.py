@@ -97,9 +97,9 @@ class HvacMode(Enum):
         if self == HvacMode.HEAT:
             return 2
         elif self == HvacMode.COOL:
-            return 0                        #Needs to be 1; disabled during devlopment
+            return 1                        #Needs to be 1; disabled during devlopment
         elif self == HvacMode.DRY:
-           return 0                         #Needs to be 6; disabled during devlopment
+           return 6                         #Needs to be 6; disabled during devlopment
         elif self == HvacMode.OFF:
             return 0
     
@@ -175,6 +175,10 @@ class HvacClass(EntityPluginBaseClass):
         super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
 
+        # For debugging
+        self.status_data = ""
+        self.command_data = ""
+
         # RVC message must match the following status or command
         self.rvc_match_status = {"name": "THERMOSTAT_STATUS_1", "instance": floorplan_info['instance']}
         self.rvc_match_command = {"name": "THERMOSTAT_COMMAND_1", "instance": floorplan_info['instance']}
@@ -185,6 +189,8 @@ class HvacClass(EntityPluginBaseClass):
         self.temperature_entity_link = None
         self.furnace_mode_link = None
         self.furnace_action_link = None
+        self.aircon_mode_link = None
+        self.aircon_action_link = None
         
         # fields for a thermostat object
         self.name = floorplan_info["instance_name"]
@@ -252,57 +258,44 @@ class HvacClass(EntityPluginBaseClass):
         if value != self._set_point_temperature:
             self._set_point_temperature = value
             self._changed = True
-    
-    # @property
-    # def furnace_action(self) -> str:
-    #     return self._furnace_action
-    # @furnace_action.setter
-    # def furnace_action(self, value: str):
-    #     #This property gets set by the furnace action entity link
-    #     self.Logger.debug(f"Received update of heat action: {value}") 
-    #     if value != self._furnace_action:
-    #         #Notify overall action_changed tracker about change
-    #         self.Logger.debug(f"Updating thermostat with heat action: {value}")
-    #         self._furnace_action = value
-    #         self.update_thermostat_action()
-   
-    # @property
-    # def furnace_mode(self) -> str:
-    #     return self._furnace_mode
-    # @furnace_mode.setter
-    # def furnace_mode(self, value: str):
-    #     #This property gets set by the furnace mode entity link
-    #     self.Logger.debug(f"Received update of furnace mode: {value}") 
-    #     if value != self._furnace_mode:
-    #         #Notify overall action_changed tracker about change
-    #         self.Logger.debug(f"Updating thermostat with furnace mode: {value}")
-    #         self._furnace_mode = value
-            #self.update_thermostat_mode()
 
     def update_thermostat_action(self):
         ''' Update the thermostat action based on furnace action and modes'''
-        self.Logger.info(f"Evaluating thermostat action  {self.ac_mode} {self.furnace_mode_link.mode.value}\r\n")
+        # Debugging output
+        self.Logger.debug(f"Evaluating thermostat action with mode values  {self.aircon_mode_link.mode.value} {self.furnace_mode_link.mode.value}\r\n")
+        if self.furnace_action_link is not None:
+            self.Logger.debug(f"Evaluating thermostat action with furnace action value  {self.furnace_action_link.action}\r\n")
+        if self.aircon_action_link is not None:
+            self.Logger.debug(f"Evaluating thermostat action with aircon action value  {self.aircon_action_link.action}\r\n")   
+        # Start evaluation
         self.thermostat_action = "off"
-        if self.ac_mode == HvacMode.OFF and self.furnace_mode_link.mode.value == "off":
+        if self.furnace_mode_link.mode.value is not None and self.aircon_mode_link.mode.value == "off" and self.furnace_mode_link.mode.value == "off":
             self.thermostat_action = "off"
-        elif self.furnace_action_link is not None:
-            if self.furnace_action_link.action in ["heating", "cooling"]:
-                self.thermostat_action = self.furnace_action_link.action
-            else:
-                self.thermostat_action = "idle"
+        elif self.furnace_action_link is not None and self.furnace_mode_link.mode.value == "heat" and self.furnace_action_link.action == "heating":
+            self.thermostat_action = "heating"
+        elif self.aircon_action_link is not None and self.aircon_mode_link.mode.value == "cool" and self.aircon_action_link.action == "cooling":
+            self.thermostat_action = "cooling"
+        elif self.aircon_action_link is not None and self.aircon_mode_link.mode.value == "dry" and self.aircon_action_link.action == "cooling":
+            self.thermostat_action = "drying"
+        else:
+            self.thermostat_action = "idle"
         self.Logger.debug(f"Updating MQTT with action: { self.thermostat_action}")
         self.mqtt_support.client.publish(self.status_action_topic, self.thermostat_action, retain=True)
 
     def update_thermostat_mode(self):
         ''' Update the thermostat mode based on furnace mode'''
-        self.Logger.info(f"Evaluating thermostat mode  {self.ac_mode} {self.furnace_mode_link.mode.value}\r\n")
-        if self.ac_mode == HvacMode.OFF and self.furnace_mode_link.mode.value == "off":
+        self.Logger.debug(f"Evaluating thermostat mode  {self.aircon_mode_link.mode.value} {self.furnace_mode_link.mode.value}\r\n")
+        if self.aircon_mode_link.mode.value == "off" and self.furnace_mode_link.mode.value == "off":
             self.thermostat_mode = HvacMode.OFF
         elif self.furnace_mode_link.mode.value == "heat":
             self.thermostat_mode = HvacMode.HEAT
+        elif self.aircon_mode_link.mode.value == "cool":
+            self.thermostat_mode = HvacMode.COOL
+        elif self.aircon_mode_link.mode.value == "dry":
+            self.thermostat_mode = HvacMode.DRY
         else:
-            self.thermostat_mode = self.ac_mode
-        self.Logger.info(f"Updating MQTT with mode: { self.thermostat_mode.value}")
+            self.thermostat_mode = self.aircon_mode_link.mode.value
+        self.Logger.debug(f"Updating MQTT with mode: { self.thermostat_mode.value}")
         self.mqtt_support.client.publish(self.status_mode_topic, self.thermostat_mode.value, retain=True)
 
     def add_entity_link(self, obj):
@@ -323,6 +316,16 @@ class HvacClass(EntityPluginBaseClass):
             self.Logger.debug(f"Linking to {obj.name}")
             self.furnace_action_link = obj
             #Two way link so furnace action can update this entity
+            obj.thermostat_entity_link = self
+        elif obj.link_id == "aircon-mode":
+            self.Logger.debug(f"Linking to {obj.name}")
+            self.aircon_mode_link = obj
+            #Two way link so aircon mode can update this entity
+            obj.thermostat_entity_link = self
+        elif obj.link_id == "aircon-action":
+            self.Logger.debug(f"Linking to {obj.name}")
+            self.aircon_action_link = obj
+            #Two way link so aircon action can update this entity
             obj.thermostat_entity_link = self
         else:
             self.Logger.error(f"Unknown entity link {obj.name}")
@@ -352,7 +355,10 @@ class HvacClass(EntityPluginBaseClass):
 
 
         if self._is_entry_match(self.rvc_match_status, new_message):
-            self.Logger.debug(f"Msg Match Status: {str(new_message)}")
+            #self.Logger.debug(f"Msg Match Status: {str(new_message)}")
+            if self.status_data != new_message["data"]:
+                self.status_data = new_message["data"]
+                self.Logger.debug(f"New Status: {str(new_message)}")
 
             self.fan_mode = FanMode.get_fan_mode_from_rvc(int(new_message["fan_speed"]), new_message["fan_mode_definition"] )
             # use cool because for this implementation we will update cool and heat to the same value
@@ -363,8 +369,11 @@ class HvacClass(EntityPluginBaseClass):
             self._update_mqtt_topics_with_changed_values()
             return True
         elif self._is_entry_match(self.rvc_match_command, new_message):
-            self.Logger.debug(f"Msg Match Command: {str(new_message)}")
+            #self.Logger.debug(f"Msg Match Command: {str(new_message)}")
             # do nothing from command
+            if self.command_data != new_message["data"]:
+                self.command_data = new_message["data"]
+                self.Logger.debug(f"New Command: {str(new_message)}")
         return False
 
     def _update_mqtt_topics_with_changed_values(self):

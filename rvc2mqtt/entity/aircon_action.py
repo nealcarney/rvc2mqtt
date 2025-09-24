@@ -1,5 +1,5 @@
 """
-A furnace action entity linked to a thermostat
+A air conditioner action entity linked to a thermostat
 
 Copyright 2022 Sean Brogan
 SPDX-License-Identifier: Apache-2.0
@@ -18,21 +18,19 @@ limitations under the License.
 
 """
 
-from enum import Enum
 import logging
-import struct
 from rvc2mqtt.mqtt import MQTT_Support
 from rvc2mqtt.entity import EntityPluginBaseClass
 
-class FURNACE_ACTION_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
-    FACTORY_MATCH_ATTRIBUTES = {"name": "THERMOSTAT_STATUS_1", "type": "furnace_action"}
+class AIRCON_ACTION_AIR_CONDITIONER_STATUS(EntityPluginBaseClass):
+    FACTORY_MATCH_ATTRIBUTES = {"name": "AIR_CONDITIONER_STATUS", "type": "aircon_action"}
     """
-    A furnace action entity linked to a thermostat.  
-    This tells the thermostat whether the furnace is currently heating or idle.
+    A air conditioner action entity linked to a thermostat.  
+    This tells the thermostat whether the air conditioner is currently cooling or idle.
     """
 
     def __init__(self, floorplan_info: dict, mqtt_support: MQTT_Support):
-        self.id = "furnace-action-i" + str(floorplan_info["instance"])
+        self.id = "aircon-action-i" + str(floorplan_info["instance"])
         super().__init__(floorplan_info, mqtt_support)
         self.Logger = logging.getLogger(__class__.__name__)
         self.name =  floorplan_info["instance_name"]
@@ -45,9 +43,9 @@ class FURNACE_ACTION_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
         self.thermostat_entity_link = None
 
         # RVC message must match the following to be this device
-        self.rvc_match_status = { "name": "THERMOSTAT_STATUS_1", "instance": floorplan_info['instance']}
-        self.rvc_match_command = { "name": "THERMOSTAT_COMMAND_1", "instance": floorplan_info['instance']}
-
+        self.rvc_match_status = { "name": "AIR_CONDITIONER_STATUS", "instance": floorplan_info['instance']}
+        self.rvc_match_command= { "name": "AIR_CONDITIONER_COMMAND", "instance": floorplan_info['instance']}
+        
     @property
     def action(self) -> str:
         return self._action
@@ -64,18 +62,18 @@ class FURNACE_ACTION_THERMOSTAT_STATUS_1(EntityPluginBaseClass):
             if self.status_data != new_message["data"]:
                 self.status_data = new_message["data"]
                 self.Logger.debug(f"New Status: {str(new_message)}")
-                self.action = "heating" if new_message["operating_mode_definition"] == "heat" else "idle"
-                self.Logger.debug(f"Received RVC update with heat action: {self.action}")
+                self.action = "cooling" if new_message["air_conditioning_output_level"] > 0 else "idle"
+                self.Logger.debug(f"Received RVC update with cool action: {self.action}")
                 # If action has changed, update thermostat entity'''
                 if self._changed:
-                    self.Logger.debug(f"Notifying thermostat of heat action: {self.action}") 
+                    self.Logger.debug(f"Notifying thermostat of cool action: {self.action}") 
                     self.thermostat_entity_link.update_thermostat_action()
                     self._changed = False
-            return True
-        elif self._is_entry_match(self.rvc_match_command, new_message):
-            # Log if data has changed
-            if self.command_data != new_message["data"]:
-                self.command_data = new_message["data"]
-                self.Logger.debug(f"New Command: {str(new_message)}")
-            return True
+                return True
+            elif self._is_entry_match(self.rvc_match_command, new_message):
+                # For debugging only
+                if self.command_data != new_message["data"]:
+                    self.command_data = new_message["data"]
+                    self.Logger.debug(f"New Command: {str(new_message)}")
+                return True
         return False
