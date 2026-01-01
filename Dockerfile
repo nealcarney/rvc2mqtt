@@ -11,5 +11,4 @@ COPY requirement.txt requirement.txt
 RUN pip3 install -r requirement.txt
 RUN pip3 install --no-cache-dir -e .
 
-CMD python3 -m rvc2mqtt.app
-#CMD ["sleep", "infinity"]
+CMD ["python3", "-m", "rvc2mqtt.app"]
